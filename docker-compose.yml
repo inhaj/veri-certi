@@ -1,0 +1,49 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      # Docker 내부 네트워크용 오버라이드
+      - DB_URL=jdbc:mysql://db:3306/vericerti?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      - REDIS_HOST=redis
+      - STORAGE_UPLOAD_DIR=/app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=${DB_NAME:-vericerti}
+      - MYSQL_USER=${DB_USERNAME:-vericerti}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-password}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootpassword}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "${DB_EXTERNAL_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_EXTERNAL_PORT:-6379}:6379"
+
+volumes:
+  mysql_data:
+  redis_data:
+  uploads_data:

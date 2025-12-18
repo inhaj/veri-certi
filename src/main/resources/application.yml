@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: vericerti-api
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/vericerti?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:vericerti}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: ${JPA_SHOW_SQL:false}
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:}
+  access-token-expiry: ${JWT_ACCESS_EXPIRY:900000}
+  refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000}
+  cookie:
+    name: refreshToken
+    path: /api/auth/refresh
+    same-site: Strict
+    secure: ${JWT_COOKIE_SECURE:true}
+    http-only: true
+
+# 블록체인 설정
+blockchain:
+  ethereum:
+    network-url: ${BLOCKCHAIN_NETWORK_URL:}
+    contract-address: ${BLOCKCHAIN_CONTRACT_ADDRESS:}
+    private-key: ${BLOCKCHAIN_PRIVATE_KEY:}
+
+# 파일 저장 설정
+storage:
+  type: ${STORAGE_TYPE:local}
+  local:
+    upload-dir: ${STORAGE_UPLOAD_DIR:./uploads}
+
+logging:
+  level:
+    com.vericerti: ${LOG_LEVEL:INFO}
+    org.hibernate.SQL: ${LOG_SQL_LEVEL:WARN}
+
+# 필터 및 AOP 설정
+app:
+  logging:
+    enabled: ${APP_LOGGING_ENABLED:true}
+    include-headers: false
+    exclude-paths:
+      - /actuator/**
+      - /health
+      - /favicon.ico
+
+  ip-filter:
+    enabled: ${APP_IP_FILTER_ENABLED:false}
+    mode: ${APP_IP_FILTER_MODE:allowlist}
+    addresses-string: ${APP_IP_FILTER_ADDRESSES:127.0.0.1,0:0:0:0:0:0:0:1}
+
+  slow-execution:
+    enabled: ${APP_SLOW_EXECUTION_ENABLED:true}
+    default-threshold-ms: ${APP_SLOW_EXECUTION_THRESHOLD:500}

@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: vericerti-api
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  main:
+    allow-bean-definition-overriding: true
+
+jwt:
+  secret: test-secret-key-that-should-be-at-least-256-bits-long-for-hs256-algorithm
+  access-token-expiry: 900000
+  refresh-token-expiry: 604800000
+
+blockchain:
+  ethereum:
+    network-url: ""
+    contract-address: ""
+    private-key: ""
+
+storage:
+  type: local
+  local:
+    upload-dir: ./test-uploads
+
+logging:
+  level:
+    com.vericerti: DEBUG
+    org.testcontainers: INFO
