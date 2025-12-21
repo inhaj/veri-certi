@@ -8,7 +8,7 @@ services:
       - .env
     environment:
       # Docker 내부 네트워크용 오버라이드
-      - DB_URL=jdbc:mysql://db:3306/vericerti?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      - DB_URL=jdbc:mysql://db:3306/vericerti?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       - REDIS_HOST=redis
       - STORAGE_UPLOAD_DIR=/app/uploads
     volumes:

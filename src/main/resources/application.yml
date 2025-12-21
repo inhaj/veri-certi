@@ -68,7 +68,7 @@ app:
   ip-filter:
     enabled: ${APP_IP_FILTER_ENABLED:false}
     mode: ${APP_IP_FILTER_MODE:allowlist}
-    addresses-string: ${APP_IP_FILTER_ADDRESSES:127.0.0.1,0:0:0:0:0:0:0:1}
+    addresses-string: ${APP_IP_FILTER_ADDRESSES_STRING:127.0.0.1,0:0:0:0:0:0:0:1}
 
   slow-execution:
     enabled: ${APP_SLOW_EXECUTION_ENABLED:true}
