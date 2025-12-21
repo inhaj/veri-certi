@@ -1,88 +1,117 @@
 package com.vericerti.domain.ledger.service;
 
+import com.vericerti.application.command.CreateLedgerEntryCommand;
 import com.vericerti.config.BaseIntegrationTest;
+import com.vericerti.domain.common.vo.BusinessNumber;
 import com.vericerti.domain.ledger.entity.LedgerEntry;
 import com.vericerti.domain.ledger.entity.LedgerEntityType;
 import com.vericerti.domain.ledger.entity.LedgerStatus;
+import com.vericerti.domain.ledger.repository.LedgerEntryRepository;
+import com.vericerti.domain.organization.entity.Organization;
+import com.vericerti.domain.organization.repository.OrganizationRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class LedgerServiceIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private LedgerService ledgerService;
 
+    @Autowired
+    private OrganizationRepository organizationRepository;
+
+    @Autowired
+    private LedgerEntryRepository ledgerEntryRepository;
+
+    private Organization testOrg1;
+    private Organization testOrg2;
+
+    @BeforeEach
+    void setUp() {
+        testOrg1 = organizationRepository.save(Organization.builder()
+                .name("테스트 단체 1")
+                .businessNumber(BusinessNumber.of("BN-" + UUID.randomUUID()))
+                .description("테스트용")
+                .build());
+
+        testOrg2 = organizationRepository.save(Organization.builder()
+                .name("테스트 단체 2")
+                .businessNumber(BusinessNumber.of("BN-" + UUID.randomUUID()))
+                .description("다른 단체")
+                .build());
+    }
 
     @Test
     @DisplayName("createEntry - 파일 해시 계산 및 LedgerEntry 저장")
     void createEntry_shouldSaveEntryWithHashAndFile() {
         // given
-        Long organizationId = 1L;
         Long entityId = 100L;
         byte[] fileContent = "test file content".getBytes();
         String filename = "receipt.pdf";
 
         // when
         LedgerEntry entry = ledgerService.createEntry(
-                organizationId,
-                LedgerEntityType.DONATION,
-                entityId,
-                fileContent,
-                filename
+                new CreateLedgerEntryCommand(testOrg1.getId(), LedgerEntityType.DONATION, entityId, fileContent, filename)
         );
 
         // then
-        assertThat(entry.getId()).isNotNull();
-        assertThat(entry.getOrganizationId()).isEqualTo(organizationId);
-        assertThat(entry.getEntityType()).isEqualTo(LedgerEntityType.DONATION);
-        assertThat(entry.getEntityId()).isEqualTo(entityId);
-        assertThat(entry.getDataHash()).isNotBlank();
-        assertThat(entry.getDataHash()).hasSize(64); // SHA-256 hex
-        assertThat(entry.getFileUrl()).isNotBlank();
-        assertThat(entry.getStatus()).isEqualTo(LedgerStatus.PENDING);
+        assertAll(
+                () -> assertThat(entry.getId()).isNotNull(),
+                () -> assertThat(entry.getOrganizationId()).isEqualTo(testOrg1.getId()),
+                () -> assertThat(entry.getEntityType()).isEqualTo(LedgerEntityType.DONATION),
+                () -> assertThat(entry.getEntityId()).isEqualTo(entityId),
+                () -> assertThat(entry.getDataHashValue()).isNotBlank(),
+                () -> assertThat(entry.getDataHashValue()).hasSize(64),
+                () -> assertThat(entry.getFileUrl()).isNotBlank(),
+                () -> assertThat(entry.getStatus()).isEqualTo(LedgerStatus.PENDING)
+        );
     }
 
     @Test
     @DisplayName("findByOrganization - 조직별 LedgerEntry 조회")
     void findByOrganization_shouldReturnEntriesOrderedByDate() {
         // given
-        Long orgId = 1L;
-        LedgerEntry entry1 = createAndSaveEntry(orgId, 100L);
-        LedgerEntry entry2 = createAndSaveEntry(orgId, 101L);
-        createAndSaveEntry(2L, 200L); // 다른 조직
+        createAndSaveEntry(testOrg1.getId(), 100L);
+        createAndSaveEntry(testOrg1.getId(), 101L);
+        createAndSaveEntry(testOrg2.getId(), 200L);
 
         // when
-        List<LedgerEntry> entries = ledgerService.findByOrganization(orgId);
+        List<LedgerEntry> entries = ledgerService.findByOrganization(testOrg1.getId());
 
         // then
-        assertThat(entries).hasSize(2);
-        assertThat(entries).extracting(LedgerEntry::getOrganizationId)
-                .containsOnly(orgId);
+        assertAll(
+                () -> assertThat(entries).hasSize(2),
+                () -> assertThat(entries).extracting(LedgerEntry::getOrganizationId).containsOnly(testOrg1.getId())
+        );
     }
 
     @Test
     @DisplayName("findPendingEntries - PENDING 상태 필터링")
     void findPendingEntries_shouldReturnOnlyPending() {
         // given
-        LedgerEntry pending1 = createAndSaveEntry(1L, 100L);
-        LedgerEntry pending2 = createAndSaveEntry(1L, 101L);
-        LedgerEntry recorded = createAndSaveEntry(1L, 102L);
+        createAndSaveEntry(testOrg1.getId(), 100L);
+        createAndSaveEntry(testOrg1.getId(), 101L);
+        LedgerEntry recorded = createAndSaveEntry(testOrg1.getId(), 102L);
         ledgerService.markAsRecorded(recorded.getId(), "0x123abc");
 
         // when
         List<LedgerEntry> pendingEntries = ledgerService.findPendingEntries();
 
         // then
-        assertThat(pendingEntries).hasSize(2);
-        assertThat(pendingEntries).extracting(LedgerEntry::getStatus)
-                .containsOnly(LedgerStatus.PENDING);
+        assertAll(
+                () -> assertThat(pendingEntries).hasSize(2),
+                () -> assertThat(pendingEntries).extracting(LedgerEntry::getStatus).containsOnly(LedgerStatus.PENDING)
+        );
     }
 
     @Test
@@ -90,7 +119,7 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
     @Transactional
     void markAsRecorded_shouldUpdateStatusAndTxHash() {
         // given
-        LedgerEntry entry = createAndSaveEntry(1L, 100L);
+        LedgerEntry entry = createAndSaveEntry(testOrg1.getId(), 100L);
         String txHash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
 
         // when
@@ -98,8 +127,10 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
 
         // then
         LedgerEntry updated = ledgerEntryRepository.findById(entry.getId()).orElseThrow();
-        assertThat(updated.getStatus()).isEqualTo(LedgerStatus.RECORDED);
-        assertThat(updated.getBlockchainTxHash()).isEqualTo(txHash);
+        assertAll(
+                () -> assertThat(updated.getStatus()).isEqualTo(LedgerStatus.RECORDED),
+                () -> assertThat(updated.getBlockchainTxHash()).isEqualTo(txHash)
+        );
     }
 
     @Test
@@ -107,7 +138,7 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
     @Transactional
     void markAsFailed_shouldUpdateStatus() {
         // given
-        LedgerEntry entry = createAndSaveEntry(1L, 100L);
+        LedgerEntry entry = createAndSaveEntry(testOrg1.getId(), 100L);
 
         // when
         ledgerService.markAsFailed(entry.getId());
@@ -120,10 +151,8 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("markAsRecorded - 존재하지 않는 Entry ID")
     void markAsRecorded_withInvalidId_shouldThrow() {
-        // when & then
         assertThatThrownBy(() -> ledgerService.markAsRecorded(999L, "0xhash"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Entry not found");
+                .isInstanceOf(com.vericerti.infrastructure.exception.EntityNotFoundException.class);
     }
 
     @Test
@@ -131,10 +160,12 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
     void verifyHash_withSameContent_shouldReturnTrue() {
         // given
         byte[] fileContent = "test file content".getBytes();
-        LedgerEntry entry = ledgerService.createEntry(1L, LedgerEntityType.DONATION, 100L, fileContent, "test.pdf");
+        LedgerEntry entry = ledgerService.createEntry(
+                new CreateLedgerEntryCommand(testOrg1.getId(), LedgerEntityType.DONATION, 100L, fileContent, "test.pdf")
+        );
 
         // when
-        boolean result = ledgerService.verifyHash(fileContent, entry.getDataHash());
+        boolean result = ledgerService.verifyHash(fileContent, entry.getDataHashValue());
 
         // then
         assertThat(result).isTrue();
@@ -146,10 +177,12 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
         // given
         byte[] originalContent = "original content".getBytes();
         byte[] modifiedContent = "modified content".getBytes();
-        LedgerEntry entry = ledgerService.createEntry(1L, LedgerEntityType.DONATION, 100L, originalContent, "test.pdf");
+        LedgerEntry entry = ledgerService.createEntry(
+                new CreateLedgerEntryCommand(testOrg1.getId(), LedgerEntityType.DONATION, 100L, originalContent, "test.pdf")
+        );
 
         // when
-        boolean result = ledgerService.verifyHash(modifiedContent, entry.getDataHash());
+        boolean result = ledgerService.verifyHash(modifiedContent, entry.getDataHashValue());
 
         // then
         assertThat(result).isFalse();
@@ -157,11 +190,16 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
 
     private LedgerEntry createAndSaveEntry(Long orgId, Long entityId) {
         return ledgerService.createEntry(
-                orgId,
-                LedgerEntityType.DONATION,
-                entityId,
-                ("content for " + entityId).getBytes(),
-                "file_" + entityId + ".pdf"
+                new CreateLedgerEntryCommand(
+                        orgId,
+                        LedgerEntityType.DONATION,
+                        entityId,
+                        ("content for " + entityId).getBytes(),
+                        "file_" + entityId + ".pdf"
+                )
         );
     }
 }
+
+
+

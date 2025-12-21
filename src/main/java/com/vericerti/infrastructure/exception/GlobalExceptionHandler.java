@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
@@ -21,7 +20,22 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     /**
-     * 비즈니스 로직 예외 (잘못된 요청)
+     * 비즈니스 예외 (커스텀 예외 계층)
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(
+            BusinessException e, HttpServletRequest request) {
+        ErrorCode errorCode = e.getErrorCode();
+        log.warn("Business exception: {} - {} [{}]", 
+                request.getRequestURI(), e.getMessage(), errorCode.getCode());
+        
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(new ErrorResponse(errorCode.getCode(), e.getMessage(), request.getRequestURI()));
+    }
+
+    /**
+     * 비즈니스 로직 예외 (레거시 - 점진적 마이그레이션용)
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleBadRequest(
@@ -29,21 +43,22 @@ public class GlobalExceptionHandler {
         log.warn("Bad request: {} - {}", request.getRequestURI(), e.getMessage());
         
         return ResponseEntity.badRequest().body(
-                new ErrorResponse("BAD_REQUEST", e.getMessage(), request.getRequestURI())
+                new ErrorResponse(ErrorCode.VALIDATION_ERROR.getCode(), e.getMessage(), request.getRequestURI())
         );
     }
 
     /**
-     * 인증 실패
+     * 인증 실패 (Spring Security)
      */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorized(
             BadCredentialsException e, HttpServletRequest request) {
         log.warn("Authentication failed: {} - {}", request.getRequestURI(), e.getMessage());
         
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                new ErrorResponse("UNAUTHORIZED", "Invalid credentials", request.getRequestURI())
-        );
+        ErrorCode errorCode = ErrorCode.INVALID_CREDENTIALS;
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), request.getRequestURI()));
     }
 
     /**
@@ -54,9 +69,10 @@ public class GlobalExceptionHandler {
             AccessDeniedException e, HttpServletRequest request) {
         log.warn("Access denied: {} - {}", request.getRequestURI(), e.getMessage());
         
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                new ErrorResponse("FORBIDDEN", "Access denied", request.getRequestURI())
-        );
+        ErrorCode errorCode = ErrorCode.ACCESS_DENIED;
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), request.getRequestURI()));
     }
 
     /**
@@ -73,12 +89,12 @@ public class GlobalExceptionHandler {
         log.warn("Validation error: {} - {}", request.getRequestURI(), message);
         
         return ResponseEntity.badRequest().body(
-                new ErrorResponse("VALIDATION_ERROR", message, request.getRequestURI())
+                new ErrorResponse(ErrorCode.VALIDATION_ERROR.getCode(), message, request.getRequestURI())
         );
     }
 
     /**
-     * SelfValidating 검증 실패 (ConstraintViolationException)
+     * SelfValidating 검증 실패
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(
@@ -91,7 +107,7 @@ public class GlobalExceptionHandler {
         log.warn("Constraint violation: {} - {}", request.getRequestURI(), message);
         
         return ResponseEntity.badRequest().body(
-                new ErrorResponse("VALIDATION_ERROR", message, request.getRequestURI())
+                new ErrorResponse(ErrorCode.VALIDATION_ERROR.getCode(), message, request.getRequestURI())
         );
     }
 
@@ -103,8 +119,10 @@ public class GlobalExceptionHandler {
             Exception e, HttpServletRequest request) {
         log.error("Unexpected error: {} - {}", request.getRequestURI(), e.getMessage(), e);
         
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred", request.getRequestURI())
-        );
+        ErrorCode errorCode = ErrorCode.INTERNAL_ERROR;
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), request.getRequestURI()));
     }
 }
+

@@ -46,6 +46,9 @@ dependencies {
 	// Blockchain (Web3j)
 	implementation 'org.web3j:core:4.10.3'
 
+	// OpenAPI (Swagger)
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

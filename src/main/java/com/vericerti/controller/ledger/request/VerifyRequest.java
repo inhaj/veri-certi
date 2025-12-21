@@ -1,23 +1,15 @@
 package com.vericerti.controller.ledger.request;
 
-import com.vericerti.common.SelfValidating;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
-import lombok.Getter;
 
-@Getter
-@Builder
-public class VerifyRequest extends SelfValidating<VerifyRequest> {
+public record VerifyRequest(
+        @NotBlank(message = "Transaction hash is required")
+        String txHash,
 
-    @NotBlank(message = "Transaction hash is required")
-    private final String txHash;
+        String dataHash
+) {}
 
-    private final String dataHash;
 
-    public VerifyRequest(String txHash, String dataHash) {
-        this.txHash = txHash;
-        this.dataHash = dataHash;
-        validateSelf();
-    }
-}
+
+
 

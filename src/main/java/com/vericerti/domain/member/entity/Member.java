@@ -1,5 +1,6 @@
 package com.vericerti.domain.member.entity;
 
+import com.vericerti.domain.common.vo.Email;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,8 +18,9 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "email", nullable = false, unique = true))
+    private Email email;
 
     @Column(nullable = false)
     private String password;
@@ -34,4 +36,12 @@ public class Member {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+    
+    /**
+     * 이메일 문자열 조회 (하위 호환)
+     */
+    public String getEmailValue() {
+        return email != null ? email.getValue() : null;
+    }
 }
+

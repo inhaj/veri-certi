@@ -36,18 +36,15 @@ public class LedgerController {
     public ResponseEntity<VerifyResponse> verifyByTxHash(@PathVariable String txHash) {
         Optional<LedgerEntry> entry = ledgerService.findByTxHash(txHash);
 
-        if (entry.isEmpty()) {
-            return ResponseEntity.ok(new VerifyResponse(
-                    false, txHash, null, "Transaction not found"
-            ));
-        }
-
-        return ResponseEntity.ok(new VerifyResponse(
+        return entry.map(ledgerEntry -> ResponseEntity.ok(new VerifyResponse(
                 true,
                 txHash,
-                entry.get().getDataHash(),
+                ledgerEntry.getDataHashValue(),
                 "Transaction verified on blockchain"
-        ));
+        ))).orElseGet(() -> ResponseEntity.ok(new VerifyResponse(
+                false, txHash, null, "Transaction not found"
+        )));
+
     }
 
     private LedgerResponse toResponse(LedgerEntry entry) {
@@ -56,7 +53,7 @@ public class LedgerController {
                 entry.getOrganizationId(),
                 entry.getEntityType(),
                 entry.getEntityId(),
-                entry.getDataHash(),
+                entry.getDataHashValue(),
                 entry.getFileUrl(),
                 entry.getBlockchainTxHash(),
                 entry.getStatus(),

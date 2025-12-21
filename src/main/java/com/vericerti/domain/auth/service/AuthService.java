@@ -1,19 +1,26 @@
 package com.vericerti.domain.auth.service;
 
+import com.vericerti.application.command.LoginCommand;
+import com.vericerti.application.command.SignupCommand;
 import com.vericerti.application.dto.SignupResult;
 import com.vericerti.application.dto.TokenResult;
+import com.vericerti.domain.common.vo.Email;
 import com.vericerti.domain.member.entity.Member;
-import com.vericerti.domain.member.entity.MemberRole;
 import com.vericerti.domain.member.repository.MemberRepository;
+import com.vericerti.infrastructure.exception.AuthenticationException;
+import com.vericerti.infrastructure.exception.DuplicateException;
+import com.vericerti.infrastructure.exception.EntityNotFoundException;
 import com.vericerti.infrastructure.security.JwtTokenProvider;
 import com.vericerti.infrastructure.security.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -25,35 +32,37 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     @Transactional
-    public SignupResult signup(String email, String password, MemberRole role) {
-        if (memberRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email already exists: " + email);
+    public SignupResult signup(SignupCommand command) {
+        if (memberRepository.existsByEmail(command.email())) {
+            throw DuplicateException.email(command.email());
         }
 
         Member member = Member.builder()
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .role(role)
+                .email(Email.of(command.email()))
+                .password(passwordEncoder.encode(command.password()))
+                .role(command.role())
                 .build();
 
         memberRepository.save(member);
+        log.info("event=user_signup email={}", command.email());
 
-        return new SignupResult(member.getId(), member.getEmail());
+        return new SignupResult(member.getId(), member.getEmailValue());
     }
 
     @Transactional
-    public TokenResult login(String email, String password) {
+    public TokenResult login(LoginCommand command) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password)
+                new UsernamePasswordAuthenticationToken(command.email(), command.password())
         );
 
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Member member = memberRepository.findByEmail(command.email())
+                .orElseThrow(() -> EntityNotFoundException.user(command.email()));
 
-        String accessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmail());
+        String accessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmailValue());
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         refreshTokenService.saveRefreshToken(member.getId(), refreshToken);
+        log.info("event=user_login email={}", command.email());
 
         return new TokenResult(accessToken, refreshToken);
     }
@@ -61,31 +70,34 @@ public class AuthService {
     @Transactional
     public TokenResult refresh(String oldRefreshToken) {
         if (!jwtTokenProvider.validateToken(oldRefreshToken)) {
-            throw new IllegalArgumentException("Invalid refresh token");
+            throw AuthenticationException.invalidToken();
         }
 
         String tokenType = jwtTokenProvider.getTokenType(oldRefreshToken);
         if (!"refresh".equals(tokenType)) {
-            throw new IllegalArgumentException("Not a refresh token");
+            throw AuthenticationException.invalidToken();
         }
 
         Long memberId = jwtTokenProvider.getMemberIdFromToken(oldRefreshToken);
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> EntityNotFoundException.user(memberId));
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmail());
+        String newAccessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmailValue());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         boolean rotated = refreshTokenService.validateAndRotate(memberId, oldRefreshToken, newRefreshToken);
         if (!rotated) {
-            throw new IllegalArgumentException("Token reuse detected. Session invalidated.");
+            throw AuthenticationException.tokenReuseDetected();
         }
 
+        log.info("event=token_refresh memberId={}", memberId);
         return new TokenResult(newAccessToken, newRefreshToken);
     }
 
     public void logout(Long memberId) {
         refreshTokenService.deleteRefreshToken(memberId);
+        log.info("event=user_logout memberId={}", memberId);
     }
 }
+
 

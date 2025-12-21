@@ -1,5 +1,6 @@
 package com.vericerti.controller;
 
+import com.vericerti.application.command.RecordDonationCommand;
 import com.vericerti.application.dto.DonationResult;
 import com.vericerti.application.usecase.RecordDonationUseCase;
 import com.vericerti.controller.donation.request.DonationCreateRequest;
@@ -9,6 +10,7 @@ import com.vericerti.domain.donation.service.DonationService;
 import com.vericerti.domain.ledger.entity.LedgerEntry;
 import com.vericerti.domain.member.entity.Member;
 import com.vericerti.domain.member.repository.MemberRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,7 +35,7 @@ public class DonationController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DonationResponse> createDonation(
             @PathVariable Long orgId,
-            @RequestPart("donation") DonationCreateRequest request,
+            @Valid @RequestPart("donation") DonationCreateRequest request,
             @RequestPart("receipt") MultipartFile receiptFile,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
@@ -41,12 +43,14 @@ public class DonationController {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         DonationResult result = recordDonationUseCase.execute(
-                orgId,
-                member.getId(),
-                request.getAmount(),
-                request.getPurpose(),
-                receiptFile.getBytes(),
-                receiptFile.getOriginalFilename()
+                new RecordDonationCommand(
+                        orgId,
+                        member.getId(),
+                        request.amount(),
+                        request.purpose(),
+                        receiptFile.getBytes(),
+                        receiptFile.getOriginalFilename()
+                )
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -66,13 +70,8 @@ public class DonationController {
     public ResponseEntity<DonationResponse> getDonation(
             @PathVariable Long orgId,
             @PathVariable Long id) {
+        // 독립 Aggregate로 Donation 직접 조회
         Donation donation = donationService.findById(id);
-        
-        // 조직 검증: 해당 기부가 요청한 조직의 것인지 확인
-        if (!donation.getOrganizationId().equals(orgId)) {
-            throw new IllegalArgumentException("Donation does not belong to this organization");
-        }
-        
         return ResponseEntity.ok(toResponse(donation, null));
     }
 
@@ -81,7 +80,7 @@ public class DonationController {
         if (ledgerEntry != null) {
             ledgerInfo = new DonationResponse.LedgerInfo(
                     ledgerEntry.getId(),
-                    ledgerEntry.getDataHash(),
+                    ledgerEntry.getDataHashValue(),
                     ledgerEntry.getBlockchainTxHash(),
                     ledgerEntry.getStatus()
             );
@@ -91,11 +90,12 @@ public class DonationController {
                 donation.getId(),
                 donation.getOrganizationId(),
                 donation.getMemberId(),
-                donation.getAmount(),
+                donation.getAmountValue(),
                 donation.getPurpose(),
                 donation.getDonatedAt(),
                 ledgerInfo
         );
     }
 }
+
 

@@ -1,48 +1,57 @@
 package com.vericerti.domain.ledger.service;
 
+import com.vericerti.application.command.CreateLedgerEntryCommand;
 import com.vericerti.domain.ledger.entity.LedgerEntry;
-import com.vericerti.domain.ledger.entity.LedgerEntityType;
 import com.vericerti.domain.ledger.entity.LedgerStatus;
 import com.vericerti.domain.ledger.repository.LedgerEntryRepository;
+import com.vericerti.domain.organization.repository.OrganizationRepository;
+import com.vericerti.infrastructure.exception.EntityNotFoundException;
 import com.vericerti.infrastructure.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LedgerService {
 
     private final LedgerEntryRepository ledgerEntryRepository;
+    private final OrganizationRepository organizationRepository;
     private final FileStorageService fileStorageService;
 
     @Transactional
-    public LedgerEntry createEntry(Long organizationId, LedgerEntityType entityType,
-                                    Long entityId, byte[] fileContent, String filename) {
-        // 파일 해시 계산
-        String dataHash = fileStorageService.calculateHash(fileContent);
+    public LedgerEntry createEntry(CreateLedgerEntryCommand command) {
+        if (!organizationRepository.existsById(command.organizationId())) {
+            throw EntityNotFoundException.organization(command.organizationId());
+        }
 
-        // 파일 저장
-        String fileUrl = fileStorageService.store(fileContent, filename);
+        String dataHash = fileStorageService.calculateHash(command.fileContent());
+        String fileUrl = fileStorageService.store(command.fileContent(), command.filename());
 
-        // LedgerEntry 생성 (PENDING 상태)
-        LedgerEntry entry = LedgerEntry.builder()
-                .organizationId(organizationId)
-                .entityType(entityType)
-                .entityId(entityId)
-                .dataHash(dataHash)
-                .fileUrl(fileUrl)
-                .status(LedgerStatus.PENDING)
-                .build();
+        LedgerEntry entry = LedgerEntry.create(
+                command.organizationId(), 
+                command.entityType(), 
+                command.entityId(), 
+                dataHash, 
+                fileUrl
+        );
+        LedgerEntry saved = ledgerEntryRepository.save(entry);
 
-        return ledgerEntryRepository.save(entry);
+        log.info("event=ledger_entry_created orgId={} entryId={} entityType={}", 
+                command.organizationId(), saved.getId(), command.entityType());
+        return saved;
     }
 
     @Transactional(readOnly = true)
     public List<LedgerEntry> findByOrganization(Long organizationId) {
+        if (!organizationRepository.existsById(organizationId)) {
+            throw EntityNotFoundException.organization(organizationId);
+        }
         return ledgerEntryRepository.findByOrganizationIdOrderByRecordedAtDesc(organizationId);
     }
 
@@ -51,6 +60,9 @@ public class LedgerService {
         return ledgerEntryRepository.findByBlockchainTxHash(txHash);
     }
 
+    /**
+     * 블록체인 동기화 배치용
+     */
     @Transactional(readOnly = true)
     public List<LedgerEntry> findPendingEntries() {
         return ledgerEntryRepository.findByStatus(LedgerStatus.PENDING);
@@ -59,15 +71,17 @@ public class LedgerService {
     @Transactional
     public void markAsRecorded(Long entryId, String txHash) {
         LedgerEntry entry = ledgerEntryRepository.findById(entryId)
-                .orElseThrow(() -> new IllegalArgumentException("Entry not found: " + entryId));
+                .orElseThrow(() -> EntityNotFoundException.ledgerEntry(entryId));
         entry.markAsRecorded(txHash);
+        log.info("event=ledger_recorded entryId={} txHash={}", entryId, txHash);
     }
 
     @Transactional
     public void markAsFailed(Long entryId) {
         LedgerEntry entry = ledgerEntryRepository.findById(entryId)
-                .orElseThrow(() -> new IllegalArgumentException("Entry not found: " + entryId));
+                .orElseThrow(() -> EntityNotFoundException.ledgerEntry(entryId));
         entry.markAsFailed();
+        log.info("event=ledger_failed entryId={}", entryId);
     }
 
     /**
@@ -78,3 +92,5 @@ public class LedgerService {
         return actualHash.equals(expectedHash);
     }
 }
+
+

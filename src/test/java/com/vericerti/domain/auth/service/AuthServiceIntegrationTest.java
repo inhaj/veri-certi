@@ -1,5 +1,7 @@
 package com.vericerti.domain.auth.service;
 
+import com.vericerti.application.command.LoginCommand;
+import com.vericerti.application.command.SignupCommand;
 import com.vericerti.application.dto.SignupResult;
 import com.vericerti.application.dto.TokenResult;
 import com.vericerti.config.BaseIntegrationTest;
@@ -11,6 +13,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class AuthServiceIntegrationTest extends BaseIntegrationTest {
 
@@ -26,12 +29,14 @@ class AuthServiceIntegrationTest extends BaseIntegrationTest {
         MemberRole role = MemberRole.DONOR;
 
         // when
-        SignupResult response = authService.signup(email, password, role);
+        SignupResult response = authService.signup(new SignupCommand(email, password, role));
 
         // then
-        assertThat(response.memberId()).isNotNull();
-        assertThat(response.email()).isEqualTo(email);
-        assertThat(memberRepository.existsByEmail(email)).isTrue();
+        assertAll(
+                () -> assertThat(response.memberId()).isNotNull(),
+                () -> assertThat(response.email()).isEqualTo(email),
+                () -> assertThat(memberRepository.existsByEmail(email)).isTrue()
+        );
     }
 
     @Test
@@ -39,12 +44,11 @@ class AuthServiceIntegrationTest extends BaseIntegrationTest {
     void signup_withDuplicateEmail_shouldThrow() {
         // given
         String email = "duplicate@example.com";
-        authService.signup(email, "password123", MemberRole.DONOR);
+        authService.signup(new SignupCommand(email, "password123", MemberRole.DONOR));
 
         // when & then
-        assertThatThrownBy(() -> authService.signup(email, "password456", MemberRole.DONOR))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Email already exists");
+        assertThatThrownBy(() -> authService.signup(new SignupCommand(email, "password456", MemberRole.DONOR)))
+                .isInstanceOf(com.vericerti.infrastructure.exception.DuplicateException.class);
     }
 
     @Test
@@ -53,14 +57,16 @@ class AuthServiceIntegrationTest extends BaseIntegrationTest {
         // given
         String email = "login@example.com";
         String password = "password123";
-        authService.signup(email, password, MemberRole.DONOR);
+        authService.signup(new SignupCommand(email, password, MemberRole.DONOR));
 
         // when
-        TokenResult tokens = authService.login(email, password);
+        TokenResult tokens = authService.login(new LoginCommand(email, password));
 
         // then
-        assertThat(tokens.accessToken()).isNotBlank();
-        assertThat(tokens.refreshToken()).isNotBlank();
+        assertAll(
+                () -> assertThat(tokens.accessToken()).isNotBlank(),
+                () -> assertThat(tokens.refreshToken()).isNotBlank()
+        );
     }
 
     @Test
@@ -68,10 +74,10 @@ class AuthServiceIntegrationTest extends BaseIntegrationTest {
     void login_withWrongPassword_shouldThrow() {
         // given
         String email = "wrong@example.com";
-        authService.signup(email, "correctPassword", MemberRole.DONOR);
+        authService.signup(new SignupCommand(email, "correctPassword", MemberRole.DONOR));
 
         // when & then
-        assertThatThrownBy(() -> authService.login(email, "wrongPassword"))
+        assertThatThrownBy(() -> authService.login(new LoginCommand(email, "wrongPassword")))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
@@ -80,17 +86,18 @@ class AuthServiceIntegrationTest extends BaseIntegrationTest {
     void refresh_shouldRotateTokens() {
         // given
         String email = "refresh@example.com";
-        authService.signup(email, "password123", MemberRole.DONOR);
-        TokenResult initialTokens = authService.login(email, "password123");
+        authService.signup(new SignupCommand(email, "password123", MemberRole.DONOR));
+        TokenResult initialTokens = authService.login(new LoginCommand(email, "password123"));
 
-        // when - refresh token은 항상 새로운 값으로 발급됨
+        // when
         TokenResult newTokens = authService.refresh(initialTokens.refreshToken());
 
         // then
-        assertThat(newTokens.accessToken()).isNotBlank();
-        assertThat(newTokens.refreshToken()).isNotBlank();
-        // Refresh token은 RTR로 인해 항상 새로운 값
-        assertThat(newTokens.refreshToken()).isNotEqualTo(initialTokens.refreshToken());
+        assertAll(
+                () -> assertThat(newTokens.accessToken()).isNotBlank(),
+                () -> assertThat(newTokens.refreshToken()).isNotBlank(),
+                () -> assertThat(newTokens.refreshToken()).isNotEqualTo(initialTokens.refreshToken())
+        );
     }
 
     @Test
@@ -98,26 +105,24 @@ class AuthServiceIntegrationTest extends BaseIntegrationTest {
     void refresh_withReusedToken_shouldThrow() {
         // given
         String email = "reuse@example.com";
-        authService.signup(email, "password123", MemberRole.DONOR);
-        TokenResult initialTokens = authService.login(email, "password123");
+        authService.signup(new SignupCommand(email, "password123", MemberRole.DONOR));
+        TokenResult initialTokens = authService.login(new LoginCommand(email, "password123"));
         String usedToken = initialTokens.refreshToken();
 
-        // 첫 번째 갱신 성공 - 새 토큰으로 교체됨 (RTR)
         authService.refresh(usedToken);
 
-        // when & then - 같은(이미 사용된) 토큰 재사용 시도
+        // when & then
         assertThatThrownBy(() -> authService.refresh(usedToken))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Token reuse detected");
+                .isInstanceOf(com.vericerti.infrastructure.exception.AuthenticationException.class);
     }
 
     @Test
     @DisplayName("refresh - 잘못된 토큰")
     void refresh_withInvalidToken_shouldThrow() {
-        // when & then
         assertThatThrownBy(() -> authService.refresh("invalid.token.here"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Invalid refresh token");
+                .isInstanceOf(com.vericerti.infrastructure.exception.AuthenticationException.class);
     }
 }
+
+
 

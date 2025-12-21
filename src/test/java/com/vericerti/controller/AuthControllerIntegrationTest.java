@@ -6,7 +6,6 @@ import com.vericerti.controller.auth.request.SignupRequest;
 import com.vericerti.controller.auth.response.SignupResponse;
 import com.vericerti.controller.auth.response.TokenResponse;
 import com.vericerti.domain.member.entity.MemberRole;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -15,6 +14,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
@@ -31,11 +31,11 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("POST /api/auth/signup - 회원가입 성공")
     void signup_shouldReturnMemberId() {
         // given
-        SignupRequest request = SignupRequest.builder()
-                .email("test@example.com")
-                .password("password123")
-                .role(MemberRole.DONOR)
-                .build();
+        SignupRequest request = new SignupRequest(
+                "test@example.com",
+                "password123",
+                MemberRole.DONOR
+        );
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -49,10 +49,12 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
         );
 
         // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().memberId()).isNotNull();
-        assertThat(response.getBody().email()).isEqualTo("test@example.com");
+        assertAll(
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().memberId()).isNotNull(),
+                () -> assertThat(response.getBody().email()).isEqualTo("test@example.com")
+        );
     }
 
     @Test
@@ -67,28 +69,27 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
         restTemplate.postForEntity(
                 baseUrl() + "/signup",
-                new HttpEntity<>(SignupRequest.builder()
-                        .email(email).password(password).role(MemberRole.DONOR).build(), headers),
+                new HttpEntity<>(new SignupRequest(email, password, MemberRole.DONOR), headers),
                 SignupResponse.class
         );
 
         // when
         ResponseEntity<TokenResponse> response = restTemplate.postForEntity(
                 baseUrl() + "/login",
-                new HttpEntity<>(LoginRequest.builder()
-                        .email(email).password(password).build(), headers),
+                new HttpEntity<>(new LoginRequest(email, password), headers),
                 TokenResponse.class
         );
 
         // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().accessToken()).isNotBlank();
-        assertThat(response.getHeaders().get("Set-Cookie")).isNotNull();
+        assertAll(
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().accessToken()).isNotBlank(),
+                () -> assertThat(response.getHeaders().get("Set-Cookie")).isNotNull()
+        );
     }
 
     @Test
-    @Disabled("RestTemplate exception handling differs from expected - needs investigation")
     @DisplayName("POST /api/auth/login - 잘못된 비밀번호")
     void login_withWrongPassword_shouldReturn401() {
         // given
@@ -98,8 +99,7 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
         restTemplate.postForEntity(
                 baseUrl() + "/signup",
-                new HttpEntity<>(SignupRequest.builder()
-                        .email(email).password("correctPassword").role(MemberRole.DONOR).build(), headers),
+                new HttpEntity<>(new SignupRequest(email, "correctPassword", MemberRole.DONOR), headers),
                 SignupResponse.class
         );
 
@@ -107,8 +107,7 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
         try {
             restTemplate.postForEntity(
                     baseUrl() + "/login",
-                    new HttpEntity<>(LoginRequest.builder()
-                            .email(email).password("wrongPassword").build(), headers),
+                    new HttpEntity<>(new LoginRequest(email, "wrongPassword"), headers),
                     String.class
             );
             assertThat(false).as("Expected HttpClientErrorException to be thrown").isTrue();
@@ -118,7 +117,6 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @Disabled("Cookie handling with RestTemplate needs investigation - 403 Forbidden")
     @DisplayName("POST /api/auth/refresh - 토큰 갱신")
     void refresh_shouldReturnNewTokens() {
         // given - 회원가입 + 로그인
@@ -130,27 +128,24 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
         restTemplate.postForEntity(
                 baseUrl() + "/signup",
-                new HttpEntity<>(SignupRequest.builder()
-                        .email(email).password(password).role(MemberRole.DONOR).build(), headers),
+                new HttpEntity<>(new SignupRequest(email, password, MemberRole.DONOR), headers),
                 SignupResponse.class
         );
 
         ResponseEntity<TokenResponse> loginResponse = restTemplate.postForEntity(
                 baseUrl() + "/login",
-                new HttpEntity<>(LoginRequest.builder()
-                        .email(email).password(password).build(), headers),
+                new HttpEntity<>(new LoginRequest(email, password), headers),
                 TokenResponse.class
         );
 
-        // 쿠키와 액세스 토큰 추출
-        String cookie = loginResponse.getHeaders().getFirst("Set-Cookie");
-        String accessToken = loginResponse.getBody().accessToken();
+        String setCookieHeader = loginResponse.getHeaders().getFirst("Set-Cookie");
+        String cookieValue = setCookieHeader.split(";")[0];
 
-        // when - refresh 엔드포인트 호출
+        // when
         HttpHeaders refreshHeaders = new HttpHeaders();
-        refreshHeaders.add("Cookie", cookie);
-        refreshHeaders.add("Authorization", "Bearer " + accessToken);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(refreshHeaders);
+        refreshHeaders.add("Cookie", cookieValue);
+        refreshHeaders.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> requestEntity = new HttpEntity<>("", refreshHeaders);
 
         ResponseEntity<TokenResponse> response = restTemplate.exchange(
                 baseUrl() + "/refresh",
@@ -160,10 +155,14 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
         );
 
         // then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().accessToken()).isNotBlank();
+        assertAll(
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().accessToken()).isNotBlank()
+        );
     }
 }
+
+
 
 

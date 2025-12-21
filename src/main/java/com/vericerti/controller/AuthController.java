@@ -1,5 +1,7 @@
 package com.vericerti.controller;
 
+import com.vericerti.application.command.LoginCommand;
+import com.vericerti.application.command.SignupCommand;
 import com.vericerti.application.dto.SignupResult;
 import com.vericerti.application.dto.TokenResult;
 import com.vericerti.controller.auth.request.LoginRequest;
@@ -10,6 +12,7 @@ import com.vericerti.controller.auth.response.TokenResponse;
 import com.vericerti.domain.auth.service.AuthService;
 import com.vericerti.domain.member.entity.MemberRole;
 import com.vericerti.infrastructure.config.JwtProperties;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -27,15 +30,19 @@ public class AuthController {
     private final JwtProperties jwtProperties;
 
     @PostMapping("/signup")
-    public ResponseEntity<SignupResponse> signup(@RequestBody SignupRequest request) {
-        MemberRole role = request.getRole() != null ? request.getRole() : MemberRole.DONOR;
-        SignupResult result = authService.signup(request.getEmail(), request.getPassword(), role);
+    public ResponseEntity<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
+        MemberRole role = request.role() != null ? request.role() : MemberRole.DONOR;
+        SignupResult result = authService.signup(
+                new SignupCommand(request.email(), request.password(), role)
+        );
         return ResponseEntity.ok(new SignupResponse(result.memberId(), result.email()));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
-        TokenResult tokens = authService.login(request.getEmail(), request.getPassword());
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
+        TokenResult tokens = authService.login(
+                new LoginCommand(request.email(), request.password())
+        );
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, createRefreshTokenCookie(tokens.refreshToken()).toString())
@@ -49,7 +56,7 @@ public class AuthController {
 
         String refreshToken = refreshTokenFromCookie;
         if (refreshToken == null && request != null) {
-            refreshToken = request.getRefreshToken();
+            refreshToken = request.refreshToken();
         }
 
         if (refreshToken == null) {
@@ -101,5 +108,6 @@ public class AuthController {
                 .build();
     }
 }
+
 
 

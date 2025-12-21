@@ -57,6 +57,6 @@ public class BlockchainSyncScheduler {
     private String recordToBlockchain(LedgerEntry entry) {
         // TODO: 실제 Web3j로 스마트 컨트랙트 호출
         // 현재는 Mock txHash 반환 (Testnet 연결 전)
-        return "0x" + entry.getDataHash().substring(0, 64);
+        return "0x" + entry.getDataHashValue().substring(0, 64);
     }
 }
