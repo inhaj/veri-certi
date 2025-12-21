@@ -40,11 +40,21 @@ public enum ErrorCode {
     INVALID_DATA_HASH("L002", "Invalid data hash format", HttpStatus.BAD_REQUEST),
     INVALID_TX_HASH("L003", "Invalid transaction hash format", HttpStatus.BAD_REQUEST),
     
+    // Account
+    ACCOUNT_NOT_FOUND("AC001", "Account not found", HttpStatus.NOT_FOUND),
+    
+    // Receipt
+    RECEIPT_NOT_FOUND("R001", "Receipt not found", HttpStatus.NOT_FOUND),
+    
     // Validation  
     VALIDATION_ERROR("V001", "Validation failed", HttpStatus.BAD_REQUEST),
     INVALID_EMAIL("V002", "Invalid email format", HttpStatus.BAD_REQUEST),
     INVALID_BUSINESS_NUMBER("V003", "Invalid business number format", HttpStatus.BAD_REQUEST),
     INVALID_AMOUNT("V004", "Invalid amount", HttpStatus.BAD_REQUEST),
+    
+    // Common
+    ENTITY_NOT_FOUND("C001", "Entity not found", HttpStatus.NOT_FOUND),
+    DUPLICATE_ENTRY("C002", "Duplicate entry", HttpStatus.CONFLICT),
     
     // System
     INTERNAL_ERROR("S001", "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);

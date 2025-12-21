@@ -32,4 +32,12 @@ public class EntityNotFoundException extends BusinessException {
     public static EntityNotFoundException ledgerEntry(Long id) {
         return new EntityNotFoundException(ErrorCode.LEDGER_ENTRY_NOT_FOUND, "Ledger entry not found: " + id);
     }
+    
+    public static EntityNotFoundException account(Long id) {
+        return new EntityNotFoundException(ErrorCode.ACCOUNT_NOT_FOUND, "Account not found: " + id);
+    }
+    
+    public static EntityNotFoundException receipt(Long id) {
+        return new EntityNotFoundException(ErrorCode.RECEIPT_NOT_FOUND, "Receipt not found: " + id);
+    }
 }
