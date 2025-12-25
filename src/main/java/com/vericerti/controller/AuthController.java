@@ -10,13 +10,17 @@ import com.vericerti.controller.auth.request.SignupRequest;
 import com.vericerti.controller.auth.response.SignupResponse;
 import com.vericerti.controller.auth.response.TokenResponse;
 import com.vericerti.domain.auth.service.AuthService;
+import com.vericerti.domain.member.entity.Member;
 import com.vericerti.domain.member.entity.MemberRole;
+import com.vericerti.domain.member.service.MemberService;
 import com.vericerti.infrastructure.config.JwtProperties;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -27,6 +31,7 @@ import java.time.Duration;
 public class AuthController {
 
     private final AuthService authService;
+    private final MemberService memberService;
     private final JwtProperties jwtProperties;
 
     @PostMapping("/signup")
@@ -71,7 +76,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails != null) {
+            // UserDetails의 username은 email
+            Member member = memberService.findByEmail(userDetails.getUsername());
+            authService.logout(member.getId());
+        }
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, deleteRefreshTokenCookie().toString())
                 .build();
