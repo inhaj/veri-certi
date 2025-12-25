@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "organizations")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class Organization {
 
@@ -38,6 +38,18 @@ public class Organization {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    /**
+     * 조직 정보 업데이트
+     */
+    public void update(String name, String description) {
+        if (name != null && !name.isBlank()) {
+            this.name = name;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+    }
     
     /**
      * 사업자번호 조회 (하위 호환)
@@ -46,6 +58,3 @@ public class Organization {
         return businessNumber != null ? businessNumber.getValue() : null;
     }
 }
-
-
-

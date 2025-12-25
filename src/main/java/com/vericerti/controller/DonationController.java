@@ -9,7 +9,7 @@ import com.vericerti.domain.donation.entity.Donation;
 import com.vericerti.domain.donation.service.DonationService;
 import com.vericerti.domain.ledger.entity.LedgerEntry;
 import com.vericerti.domain.member.entity.Member;
-import com.vericerti.domain.member.repository.MemberRepository;
+import com.vericerti.domain.member.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,7 @@ public class DonationController {
 
     private final DonationService donationService;
     private final RecordDonationUseCase recordDonationUseCase;
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DonationResponse> createDonation(
@@ -39,8 +39,7 @@ public class DonationController {
             @RequestPart("receipt") MultipartFile receiptFile,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
-        Member member = memberRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Member member = memberService.findByEmail(userDetails.getUsername());
 
         DonationResult result = recordDonationUseCase.execute(
                 new RecordDonationCommand(

@@ -1,6 +1,8 @@
 package com.vericerti.domain.receipt.service;
 
 import com.vericerti.application.command.CreateReceiptCommand;
+import com.vericerti.domain.common.vo.BusinessNumber;
+import com.vericerti.domain.common.vo.Money;
 import com.vericerti.domain.organization.repository.OrganizationRepository;
 import com.vericerti.domain.receipt.entity.Receipt;
 import com.vericerti.domain.receipt.repository.ReceiptRepository;
@@ -28,17 +30,18 @@ public class ReceiptService {
             throw EntityNotFoundException.organization(command.organizationId());
         }
 
-        Receipt receipt = Receipt.create(
-                command.organizationId(),
-                command.accountId(),
-                command.amount(),
-                command.issueDate(),
-                command.merchantName(),
-                command.merchantBusinessNumber(),
-                command.imageUrl(),
-                command.category(),
-                command.description()
-        );
+        Receipt receipt = Receipt.builder()
+                .organizationId(command.organizationId())
+                .accountId(command.accountId())
+                .amount(Money.of(command.amount()))
+                .issueDate(command.issueDate())
+                .merchantName(command.merchantName())
+                .merchantBusinessNumber(command.merchantBusinessNumber() != null && !command.merchantBusinessNumber().isBlank()
+                        ? BusinessNumber.of(command.merchantBusinessNumber()) : null)
+                .imageUrl(command.imageUrl())
+                .category(command.category())
+                .description(command.description())
+                .build();
 
         Receipt saved = receiptRepository.save(receipt);
         log.info("event=receipt_created orgId={} receiptId={} amount={}", 

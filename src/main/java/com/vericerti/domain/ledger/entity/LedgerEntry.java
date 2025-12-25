@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class LedgerEntry {
 
     @Id
@@ -44,7 +46,8 @@ public class LedgerEntry {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LedgerStatus status;
+    @Builder.Default
+    private LedgerStatus status = LedgerStatus.PENDING;
 
     @Column(nullable = false)
     private LocalDateTime recordedAt;
@@ -55,21 +58,6 @@ public class LedgerEntry {
         if (this.status == null) {
             this.status = LedgerStatus.PENDING;
         }
-    }
-
-    /**
-     * 팩토리 메서드
-     */
-    public static LedgerEntry create(Long organizationId, LedgerEntityType entityType,
-                                      Long entityId, String dataHash, String fileUrl) {
-        LedgerEntry entry = new LedgerEntry();
-        entry.organizationId = organizationId;
-        entry.entityType = entityType;
-        entry.entityId = entityId;
-        entry.dataHash = DataHash.of(dataHash);
-        entry.fileUrl = fileUrl;
-        entry.status = LedgerStatus.PENDING;
-        return entry;
     }
     
     /**
@@ -88,6 +76,3 @@ public class LedgerEntry {
         this.status = LedgerStatus.FAILED;
     }
 }
-
-
-

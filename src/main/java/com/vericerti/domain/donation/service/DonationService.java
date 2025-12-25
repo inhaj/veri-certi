@@ -1,18 +1,15 @@
 package com.vericerti.domain.donation.service;
 
 import com.vericerti.application.command.CreateDonationCommand;
+import com.vericerti.domain.common.vo.Money;
 import com.vericerti.domain.donation.entity.Donation;
 import com.vericerti.domain.donation.repository.DonationRepository;
 import com.vericerti.domain.organization.repository.OrganizationRepository;
 import com.vericerti.infrastructure.exception.EntityNotFoundException;
-import com.vericerti.infrastructure.exception.ErrorCode;
-import com.vericerti.infrastructure.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -29,16 +26,12 @@ public class DonationService {
             throw EntityNotFoundException.organization(command.organizationId());
         }
 
-        if (command.amount() == null || command.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException(ErrorCode.INVALID_DONATION_AMOUNT, "Amount must be positive");
-        }
-
-        Donation donation = Donation.create(
-                command.organizationId(), 
-                command.memberId(), 
-                command.amount(), 
-                command.purpose()
-        );
+        Donation donation = Donation.builder()
+                .organizationId(command.organizationId())
+                .memberId(command.memberId())
+                .amount(Money.of(command.amount()))
+                .purpose(command.purpose())
+                .build();
         Donation saved = donationRepository.save(donation);
         
         log.info("event=donation_created orgId={} donationId={} amount={}", 

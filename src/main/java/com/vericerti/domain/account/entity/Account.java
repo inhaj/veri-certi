@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-@AllArgsConstructor
 public class Account {
 
     @Id
@@ -37,7 +37,8 @@ public class Account {
     private String accountHolder;
 
     @Column(precision = 15, scale = 2)
-    private BigDecimal balance;  // TODO: 은행 API 연동 시 싱크
+    @Builder.Default
+    private BigDecimal balance = BigDecimal.ZERO; // TODO: 은행 API 연동 시 싱크
 
     @Column(length = 500)
     private String description;

@@ -1,10 +1,12 @@
 package com.vericerti.config;
 
 import com.redis.testcontainers.RedisContainer;
+import com.vericerti.domain.account.repository.AccountRepository;
 import com.vericerti.domain.donation.repository.DonationRepository;
 import com.vericerti.domain.ledger.repository.LedgerEntryRepository;
 import com.vericerti.domain.member.repository.MemberRepository;
 import com.vericerti.domain.organization.repository.OrganizationRepository;
+import com.vericerti.domain.receipt.repository.ReceiptRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,6 +38,12 @@ public abstract class BaseIntegrationTest {
     protected DonationRepository donationRepository;
 
     @Autowired
+    protected ReceiptRepository receiptRepository;
+
+    @Autowired
+    protected AccountRepository accountRepository;
+
+    @Autowired
     protected MemberRepository memberRepository;
 
     @Autowired
@@ -60,9 +68,11 @@ public abstract class BaseIntegrationTest {
      */
     @BeforeEach
     void cleanUpDatabase() {
-        // 자식 테이블부터 삭제 (외래 키 제약 조건)
+        // 자식 테이블부터 삭제 (외래 키 제약 조건 순서)
         ledgerEntryRepository.deleteAll();
+        receiptRepository.deleteAll();
         donationRepository.deleteAll();
+        accountRepository.deleteAll();
         memberRepository.deleteAll();
         organizationRepository.deleteAll();
 

@@ -56,6 +56,10 @@ public enum ErrorCode {
     ENTITY_NOT_FOUND("C001", "Entity not found", HttpStatus.NOT_FOUND),
     DUPLICATE_ENTRY("C002", "Duplicate entry", HttpStatus.CONFLICT),
     
+    // Storage
+    FILE_STORE_FAILED("ST001", "Failed to store file", HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_LOAD_FAILED("ST002", "Failed to load file", HttpStatus.INTERNAL_SERVER_ERROR),
+    
     // System
     INTERNAL_ERROR("S001", "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
 

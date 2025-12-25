@@ -1,6 +1,7 @@
 package com.vericerti.domain.ledger.service;
 
 import com.vericerti.application.command.CreateLedgerEntryCommand;
+import com.vericerti.domain.common.vo.DataHash;
 import com.vericerti.domain.ledger.entity.LedgerEntry;
 import com.vericerti.domain.ledger.entity.LedgerStatus;
 import com.vericerti.domain.ledger.repository.LedgerEntryRepository;
@@ -33,13 +34,13 @@ public class LedgerService {
         String dataHash = fileStorageService.calculateHash(command.fileContent());
         String fileUrl = fileStorageService.store(command.fileContent(), command.filename());
 
-        LedgerEntry entry = LedgerEntry.create(
-                command.organizationId(), 
-                command.entityType(), 
-                command.entityId(), 
-                dataHash, 
-                fileUrl
-        );
+        LedgerEntry entry = LedgerEntry.builder()
+                .organizationId(command.organizationId())
+                .entityType(command.entityType())
+                .entityId(command.entityId())
+                .dataHash(DataHash.of(dataHash))
+                .fileUrl(fileUrl)
+                .build();
         LedgerEntry saved = ledgerEntryRepository.save(entry);
 
         log.info("event=ledger_entry_created orgId={} entryId={} entityType={}", 

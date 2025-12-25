@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class Donation {
 
     @Id
@@ -42,19 +44,6 @@ public class Donation {
     protected void onCreate() {
         this.donatedAt = LocalDateTime.now();
     }
-
-    /**
-     * 팩토리 메서드
-     */
-    public static Donation create(Long organizationId, Long memberId, 
-                                   BigDecimal amount, String purpose) {
-        Donation donation = new Donation();
-        donation.organizationId = organizationId;
-        donation.memberId = memberId;
-        donation.amount = Money.of(amount);
-        donation.purpose = purpose;
-        return donation;
-    }
     
     /**
      * 금액 조회 (하위 호환)
@@ -63,6 +52,3 @@ public class Donation {
         return amount != null ? amount.getValue() : null;
     }
 }
-
-
-

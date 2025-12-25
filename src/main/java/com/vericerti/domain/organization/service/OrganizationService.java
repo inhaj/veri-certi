@@ -25,7 +25,7 @@ public class OrganizationService {
     public Organization create(CreateOrganizationCommand command) {
         if (organizationRepository.existsByBusinessNumber(command.businessNumber())) {
             throw new DuplicateException(
-                    ErrorCode.ORGANIZATION_NOT_FOUND,
+                    ErrorCode.DUPLICATE_ENTRY,
                     "Business number already exists: " + command.businessNumber()
             );
         }
@@ -64,10 +64,8 @@ public class OrganizationService {
     @Transactional
     public Organization update(Long id, String name, String description) {
         Organization organization = findById(id);
-        
-        // Organization은 @Builder라 직접 수정 불가 → 새로 생성해서 저장하거나 setter 추가 필요
-        // 현재는 조회만 가능하도록 구현 (수정이 필요하면 별도 메서드 추가)
-        log.info("event=organization_updated id={}", id);
+        organization.update(name, description);
+        log.info("event=organization_updated id={} name={}", id, name);
         return organization;
     }
 

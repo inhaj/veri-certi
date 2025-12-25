@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class Receipt {
 
     @Id
@@ -26,7 +28,7 @@ public class Receipt {
     private Long organizationId;
 
     @Column(name = "account_id")
-    private Long accountId;  // nullable: 계좌 미지정 가능
+    private Long accountId;
 
     @Embedded
     @AttributeOverride(name = "value", column = @Column(name = "amount", nullable = false, precision = 15, scale = 2))
@@ -58,27 +60,6 @@ public class Receipt {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-    }
-
-    /**
-     * 팩토리 메서드
-     */
-    public static Receipt create(Long organizationId, Long accountId, BigDecimal amount,
-                                  LocalDate issueDate, String merchantName, 
-                                  String merchantBusinessNumber, String imageUrl,
-                                  ReceiptCategory category, String description) {
-        Receipt receipt = new Receipt();
-        receipt.organizationId = organizationId;
-        receipt.accountId = accountId;
-        receipt.amount = Money.of(amount);
-        receipt.issueDate = issueDate;
-        receipt.merchantName = merchantName;
-        receipt.merchantBusinessNumber = merchantBusinessNumber != null && !merchantBusinessNumber.isBlank() 
-                ? BusinessNumber.of(merchantBusinessNumber) : null;
-        receipt.imageUrl = imageUrl;
-        receipt.category = category;
-        receipt.description = description;
-        return receipt;
     }
 
     /**
