@@ -25,6 +25,13 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+# Swagger UI 설정
+springdoc:
+  swagger-ui:
+    path: /docs
+  api-docs:
+    path: /openapi.json
+
 # JWT 설정
 jwt:
   secret: ${JWT_SECRET:}

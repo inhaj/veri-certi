@@ -22,7 +22,6 @@ import java.util.List;
  * IP 접근 제어 필터
  * - Allowlist 모드: 허용 IP만 통과
  * - Blocklist 모드: 차단 IP만 거부
- * - CIDR 표기법 지원 (예: 192.168.1.0/24)
  */
 @Slf4j
 @Component

@@ -1,5 +1,6 @@
-package com.vericerti.infrastructure.security;
+package com.vericerti.infrastructure.config;
 
+import com.vericerti.infrastructure.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,9 +29,16 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Public API
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/organizations/*/ledger/**").permitAll()
                         .requestMatchers("/api/ledger/verify/**").permitAll()
+                        // Swagger UI
+                        .requestMatchers("/docs", "/docs/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/openapi.json", "/openapi.json/**").permitAll()
+                        .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -47,5 +55,3 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
-
-
