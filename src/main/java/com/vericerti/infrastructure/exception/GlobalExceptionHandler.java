@@ -1,9 +1,11 @@
 package com.vericerti.infrastructure.exception;
 
+import com.vericerti.domain.exception.DomainException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
@@ -12,15 +14,28 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * 전역 예외 처리 핸들러
- * 모든 Controller에서 발생하는 예외를 일관된 형식으로 처리
+ * Global Exception Handler
+ * Handles all Controller exceptions with consistent format
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * 비즈니스 예외 (커스텀 예외 계층)
+     * Domain layer exceptions (Value Objects, Entities)
+     */
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorResponse> handleDomainException(
+            DomainException e, HttpServletRequest request) {
+        log.warn("Domain exception: {} - {}", request.getRequestURI(), e.getMessage());
+        
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("D001", e.getMessage(), request.getRequestURI()));
+    }
+
+    /**
+     * Business exceptions (custom exception hierarchy)
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(

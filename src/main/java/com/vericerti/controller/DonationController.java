@@ -69,7 +69,7 @@ public class DonationController {
     public ResponseEntity<DonationResponse> getDonation(
             @PathVariable Long orgId,
             @PathVariable Long id) {
-        // 독립 Aggregate로 Donation 직접 조회
+        // Directly query Donation as independent Aggregate
         Donation donation = donationService.findById(id);
         return ResponseEntity.ok(toResponse(donation, null));
     }
@@ -79,7 +79,7 @@ public class DonationController {
         if (ledgerEntry != null) {
             ledgerInfo = new DonationResponse.LedgerInfo(
                     ledgerEntry.getId(),
-                    ledgerEntry.getDataHashValue(),
+                    ledgerEntry.getDataHashValue().orElse(null),
                     ledgerEntry.getBlockchainTxHash(),
                     ledgerEntry.getStatus()
             );
@@ -89,7 +89,7 @@ public class DonationController {
                 donation.getId(),
                 donation.getOrganizationId(),
                 donation.getMemberId(),
-                donation.getAmountValue(),
+                donation.getAmountValue().orElse(null),
                 donation.getPurpose(),
                 donation.getDonatedAt(),
                 ledgerInfo

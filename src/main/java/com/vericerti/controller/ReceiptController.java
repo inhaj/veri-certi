@@ -51,7 +51,7 @@ public class ReceiptController {
         
         return ResponseEntity
                 .created(URI.create("/api/organizations/" + orgId + "/receipts/" + result.receipt().getId()))
-                .body(toResponse(result.receipt(), result.ledgerEntry().getDataHashValue()));
+                .body(toResponse(result.receipt(), result.ledgerEntry().getDataHashValue().orElse(null)));
     }
 
     @GetMapping

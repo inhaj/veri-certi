@@ -11,9 +11,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * JWT Token Provider for creating and validating JWT tokens.
+ */
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
+
+    // Token type constants
+    public static final String TOKEN_TYPE_ACCESS = "access";
+    public static final String TOKEN_TYPE_REFRESH = "refresh";
+    
+    // Claim name constants
+    private static final String CLAIM_EMAIL = "email";
+    private static final String CLAIM_TYPE = "type";
 
     private final JwtProperties jwtProperties;
 
@@ -27,8 +38,8 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(memberId))
-                .claim("email", email)
-                .claim("type", "access")
+                .claim(CLAIM_EMAIL, email)
+                .claim(CLAIM_TYPE, TOKEN_TYPE_ACCESS)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(getSigningKey())
@@ -41,8 +52,8 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(memberId))
-                .claim("type", "refresh")
-                .id(UUID.randomUUID().toString())  // 고유 토큰 ID (같은 초에 생성해도 다름)
+                .claim(CLAIM_TYPE, TOKEN_TYPE_REFRESH)
+                .id(UUID.randomUUID().toString())  // Unique token ID (different even in same second)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(getSigningKey())
@@ -76,6 +87,20 @@ public class JwtTokenProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return claims.get("type", String.class);
+        return claims.get(CLAIM_TYPE, String.class);
+    }
+    
+    /**
+     * Check if the token is an access token.
+     */
+    public boolean isAccessToken(String token) {
+        return TOKEN_TYPE_ACCESS.equals(getTokenType(token));
+    }
+    
+    /**
+     * Check if the token is a refresh token.
+     */
+    public boolean isRefreshToken(String token) {
+        return TOKEN_TYPE_REFRESH.equals(getTokenType(token));
     }
 }

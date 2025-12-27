@@ -1,6 +1,8 @@
 package com.vericerti.infrastructure.security;
 
 import com.vericerti.infrastructure.config.JwtProperties;
+import com.vericerti.infrastructure.exception.BusinessException;
+import com.vericerti.infrastructure.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -31,14 +33,14 @@ public class RefreshTokenService {
         String storedHash = redisTemplate.opsForValue().get(key);
         String oldHash = hashToken(oldToken);
 
-        // Reuse Detection: 이미 무효화된 토큰 사용 시
+        // Reuse Detection: Reject if token already invalidated or doesn't match
         if (storedHash == null || !storedHash.equals(oldHash)) {
-            // 전체 세션 무효화
+            // Invalidate entire session (security measure)
             redisTemplate.delete(key);
             return false;
         }
 
-        // Rotation: 새 토큰으로 교체
+        // Rotation: Replace with new token
         String newHash = hashToken(newToken);
         long ttlMs = jwtProperties.getRefreshTokenExpiry();
         redisTemplate.opsForValue().set(key, newHash, Duration.ofMillis(ttlMs));
@@ -56,7 +58,7 @@ public class RefreshTokenService {
             byte[] hash = digest.digest(token.getBytes());
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm not available", e);
+            throw new BusinessException(ErrorCode.CRYPTO_ALGORITHM_NOT_AVAILABLE, e);
         }
     }
 }

@@ -25,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
         return new User(
-                member.getEmailValue(),
+                member.getEmailValue().orElseThrow(),
                 member.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()))
         );
@@ -36,7 +36,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + memberId));
 
         return new User(
-                member.getEmailValue(),
+                member.getEmailValue().orElseThrow(),
                 member.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()))
         );

@@ -4,11 +4,14 @@ import com.vericerti.controller.ledger.response.LedgerResponse;
 import com.vericerti.controller.ledger.response.VerifyResponse;
 import com.vericerti.domain.ledger.entity.LedgerEntry;
 import com.vericerti.domain.ledger.service.LedgerService;
+import com.vericerti.infrastructure.blockchain.BlockchainSyncScheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -16,9 +19,10 @@ import java.util.Optional;
 public class LedgerController {
 
     private final LedgerService ledgerService;
+    private final BlockchainSyncScheduler blockchainSyncScheduler;
 
     /**
-     * 조직의 전체 Ledger 기록 조회 (퍼블릭 API)
+     * Get all ledger entries for an organization (Public API)
      */
     @GetMapping("/api/organizations/{orgId}/ledger")
     public ResponseEntity<List<LedgerResponse>> getLedgerEntries(@PathVariable Long orgId) {
@@ -30,7 +34,7 @@ public class LedgerController {
     }
 
     /**
-     * 트랜잭션 해시로 검증 (퍼블릭 API)
+     * Verify by transaction hash (Public API)
      */
     @GetMapping("/api/ledger/verify/{txHash}")
     public ResponseEntity<VerifyResponse> verifyByTxHash(@PathVariable String txHash) {
@@ -39,12 +43,38 @@ public class LedgerController {
         return entry.map(ledgerEntry -> ResponseEntity.ok(new VerifyResponse(
                 true,
                 txHash,
-                ledgerEntry.getDataHashValue(),
+                ledgerEntry.getDataHashValue().orElse(null),
                 "Transaction verified on blockchain"
         ))).orElseGet(() -> ResponseEntity.ok(new VerifyResponse(
                 false, txHash, null, "Transaction not found"
         )));
+    }
 
+    /**
+     * Full blockchain sync (Admin only)
+     */
+    @PostMapping("/api/ledger/sync")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> syncAll() {
+        BlockchainSyncScheduler.SyncResult result = blockchainSyncScheduler.syncAll();
+        return ResponseEntity.ok(Map.of(
+                "total", result.total(),
+                "verified", result.verified(),
+                "failed", result.failed()
+        ));
+    }
+
+    /**
+     * Sync specific entry (Admin only)
+     */
+    @PostMapping("/api/ledger/sync/{entryId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> syncEntry(@PathVariable Long entryId) {
+        boolean verified = blockchainSyncScheduler.syncEntry(entryId);
+        return ResponseEntity.ok(Map.of(
+                "entryId", entryId,
+                "verified", verified
+        ));
     }
 
     private LedgerResponse toResponse(LedgerEntry entry) {
@@ -53,7 +83,7 @@ public class LedgerController {
                 entry.getOrganizationId(),
                 entry.getEntityType(),
                 entry.getEntityId(),
-                entry.getDataHashValue(),
+                entry.getDataHashValue().orElse(null),
                 entry.getFileUrl(),
                 entry.getBlockchainTxHash(),
                 entry.getStatus(),
@@ -61,4 +91,3 @@ public class LedgerController {
         );
     }
 }
-

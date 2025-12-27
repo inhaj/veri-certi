@@ -4,16 +4,17 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 /**
- * 에러 코드 정의
+ * Error Code Definitions
  * 
- * 코드 패턴:
- * - U: User/Member 관련
- * - A: Auth 관련  
- * - D: Donation 관련
- * - L: Ledger 관련
- * - O: Organization 관련
- * - V: Validation 관련
- * - S: System 관련
+ * Code patterns:
+ * - U: User/Member related
+ * - A: Auth related  
+ * - D: Donation related
+ * - L: Ledger related
+ * - O: Organization related
+ * - V: Validation related
+ * - BC: Blockchain related
+ * - S: System related
  */
 @Getter
 public enum ErrorCode {
@@ -59,9 +60,19 @@ public enum ErrorCode {
     // Storage
     FILE_STORE_FAILED("ST001", "Failed to store file", HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_LOAD_FAILED("ST002", "Failed to load file", HttpStatus.INTERNAL_SERVER_ERROR),
+    STORAGE_INITIALIZATION_FAILED("ST003", "Failed to initialize storage", HttpStatus.INTERNAL_SERVER_ERROR),
+    
+    // Blockchain
+    BLOCKCHAIN_NOT_INITIALIZED("BC001", "Blockchain service not initialized", HttpStatus.SERVICE_UNAVAILABLE),
+    BLOCKCHAIN_CONTRACT_NOT_CONFIGURED("BC002", "Blockchain contract address not configured", HttpStatus.SERVICE_UNAVAILABLE),
+    BLOCKCHAIN_INVALID_HASH("BC003", "Invalid hash format for blockchain", HttpStatus.BAD_REQUEST),
+    BLOCKCHAIN_TRANSACTION_FAILED("BC004", "Blockchain transaction failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    BLOCKCHAIN_VERIFICATION_FAILED("BC005", "Blockchain verification failed", HttpStatus.INTERNAL_SERVER_ERROR),
     
     // System
-    INTERNAL_ERROR("S001", "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL_ERROR("S001", "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR),
+    CRYPTO_ALGORITHM_NOT_AVAILABLE("S002", "Required cryptographic algorithm not available", HttpStatus.INTERNAL_SERVER_ERROR),
+    JWT_SECRET_INVALID("S003", "JWT secret configuration is invalid", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
     private final String message;

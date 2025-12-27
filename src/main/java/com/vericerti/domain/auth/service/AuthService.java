@@ -46,7 +46,7 @@ public class AuthService {
         memberRepository.save(member);
         log.info("event=user_signup email={}", command.email());
 
-        return new SignupResult(member.getId(), member.getEmailValue());
+        return new SignupResult(member.getId(), member.getEmailValue().orElse(""));
     }
 
     @Transactional
@@ -58,7 +58,7 @@ public class AuthService {
         Member member = memberRepository.findByEmail(command.email())
                 .orElseThrow(() -> EntityNotFoundException.user(command.email()));
 
-        String accessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmailValue());
+        String accessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmailValue().orElseThrow());
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         refreshTokenService.saveRefreshToken(member.getId(), refreshToken);
@@ -74,7 +74,7 @@ public class AuthService {
         }
 
         String tokenType = jwtTokenProvider.getTokenType(oldRefreshToken);
-        if (!"refresh".equals(tokenType)) {
+        if (!JwtTokenProvider.TOKEN_TYPE_REFRESH.equals(tokenType)) {
             throw AuthenticationException.invalidToken();
         }
 
@@ -82,7 +82,7 @@ public class AuthService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> EntityNotFoundException.user(memberId));
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmailValue());
+        String newAccessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmailValue().orElseThrow());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         boolean rotated = refreshTokenService.validateAndRotate(memberId, oldRefreshToken, newRefreshToken);
