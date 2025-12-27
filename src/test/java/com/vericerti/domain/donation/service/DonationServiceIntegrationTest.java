@@ -63,7 +63,7 @@ class DonationServiceIntegrationTest extends BaseIntegrationTest {
                 () -> assertThat(donation.getId()).isNotNull(),
                 () -> assertThat(donation.getOrganizationId()).isEqualTo(testOrg1.getId()),
                 () -> assertThat(donation.getMemberId()).isEqualTo(memberId),
-                () -> assertThat(donation.getAmountValue()).isEqualByComparingTo(amount),
+                () -> assertThat(donation.getAmountValue().orElse(null)).isEqualByComparingTo(amount),
                 () -> assertThat(donation.getPurpose()).isEqualTo(purpose),
                 () -> assertThat(donation.getDonatedAt()).isNotNull()
         );
@@ -101,7 +101,7 @@ class DonationServiceIntegrationTest extends BaseIntegrationTest {
         // then
         assertAll(
                 () -> assertThat(found.getId()).isEqualTo(created.getId()),
-                () -> assertThat(found.getAmountValue()).isEqualByComparingTo(new BigDecimal("50000"))
+                () -> assertThat(found.getAmountValue().orElse(null)).isEqualByComparingTo(new BigDecimal("50000"))
         );
     }
 

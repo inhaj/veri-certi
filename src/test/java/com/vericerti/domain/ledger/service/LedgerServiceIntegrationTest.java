@@ -70,8 +70,8 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
                 () -> assertThat(entry.getOrganizationId()).isEqualTo(testOrg1.getId()),
                 () -> assertThat(entry.getEntityType()).isEqualTo(LedgerEntityType.DONATION),
                 () -> assertThat(entry.getEntityId()).isEqualTo(entityId),
-                () -> assertThat(entry.getDataHashValue()).isNotBlank(),
-                () -> assertThat(entry.getDataHashValue()).hasSize(64),
+                () -> assertThat(entry.getDataHashValue().orElse("")).isNotBlank(),
+                () -> assertThat(entry.getDataHashValue().orElse("")).hasSize(64),
                 () -> assertThat(entry.getFileUrl()).isNotBlank(),
                 () -> assertThat(entry.getStatus()).isEqualTo(LedgerStatus.PENDING)
         );
@@ -165,7 +165,7 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
         );
 
         // when
-        boolean result = ledgerService.verifyHash(fileContent, entry.getDataHashValue());
+        boolean result = ledgerService.verifyHash(fileContent, entry.getDataHashValue().orElseThrow());
 
         // then
         assertThat(result).isTrue();
@@ -182,7 +182,7 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
         );
 
         // when
-        boolean result = ledgerService.verifyHash(modifiedContent, entry.getDataHashValue());
+        boolean result = ledgerService.verifyHash(modifiedContent, entry.getDataHashValue().orElseThrow());
 
         // then
         assertThat(result).isFalse();

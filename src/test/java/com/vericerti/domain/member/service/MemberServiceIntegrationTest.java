@@ -45,7 +45,7 @@ class MemberServiceIntegrationTest extends BaseIntegrationTest {
         // then
         assertAll(
                 () -> assertThat(found.getId()).isEqualTo(createdMemberId),
-                () -> assertThat(found.getEmailValue()).isEqualTo(TEST_EMAIL),
+                () -> assertThat(found.getEmailValue().orElse("")).isEqualTo(TEST_EMAIL),
                 () -> assertThat(found.getRole()).isEqualTo(MemberRole.DONOR)
         );
     }
@@ -66,7 +66,7 @@ class MemberServiceIntegrationTest extends BaseIntegrationTest {
         // then
         assertAll(
                 () -> assertThat(found.getId()).isEqualTo(createdMemberId),
-                () -> assertThat(found.getEmailValue()).isEqualTo(TEST_EMAIL)
+                () -> assertThat(found.getEmailValue().orElse("")).isEqualTo(TEST_EMAIL)
         );
     }
 

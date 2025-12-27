@@ -72,14 +72,14 @@ class RecordDonationUseCaseIntegrationTest extends BaseIntegrationTest {
                 () -> assertThat(donation.getId()).isNotNull(),
                 () -> assertThat(donation.getOrganizationId()).isEqualTo(testOrg.getId()),
                 () -> assertThat(donation.getMemberId()).isEqualTo(memberId),
-                () -> assertThat(donation.getAmountValue()).isEqualByComparingTo(amount),
+                () -> assertThat(donation.getAmountValue().orElse(null)).isEqualByComparingTo(amount),
                 () -> assertThat(donation.getPurpose()).isEqualTo(purpose),
                 // LedgerEntry 검증
                 () -> assertThat(ledgerEntry.getId()).isNotNull(),
                 () -> assertThat(ledgerEntry.getOrganizationId()).isEqualTo(testOrg.getId()),
                 () -> assertThat(ledgerEntry.getEntityType()).isEqualTo(LedgerEntityType.DONATION),
                 () -> assertThat(ledgerEntry.getEntityId()).isEqualTo(donation.getId()),
-                () -> assertThat(ledgerEntry.getDataHashValue()).hasSize(64),
+                () -> assertThat(ledgerEntry.getDataHashValue().orElse("")).hasSize(64),
                 () -> assertThat(ledgerEntry.getStatus()).isEqualTo(LedgerStatus.PENDING)
         );
     }
