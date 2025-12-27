@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Entity
 @Table(name = "members")
@@ -37,10 +38,7 @@ public class Member {
         this.createdAt = LocalDateTime.now();
     }
     
-    /**
-     * 이메일 문자열 조회 (하위 호환)
-     */
-    public String getEmailValue() {
-        return email != null ? email.getValue() : null;
+    public Optional<String> getEmailValue() {
+        return Optional.ofNullable(email).map(Email::getValue);
     }
 }

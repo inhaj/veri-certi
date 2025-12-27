@@ -1,7 +1,6 @@
 package com.vericerti.domain.common.vo;
 
-import com.vericerti.infrastructure.exception.BusinessException;
-import com.vericerti.infrastructure.exception.ErrorCode;
+import com.vericerti.domain.exception.InvalidEmailException;
 import jakarta.persistence.Embeddable;
 
 import java.util.regex.Pattern;
@@ -14,10 +13,10 @@ public record Email(String value) {
     
     public Email {
         if (value == null || value.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_EMAIL, "Email cannot be empty");
+            throw new InvalidEmailException("", "Email cannot be empty");
         }
         if (!EMAIL_PATTERN.matcher(value).matches()) {
-            throw new BusinessException(ErrorCode.INVALID_EMAIL, "Invalid email format: " + value);
+            throw new InvalidEmailException(value);
         }
     }
     
@@ -29,3 +28,4 @@ public record Email(String value) {
         return value;
     }
 }
+

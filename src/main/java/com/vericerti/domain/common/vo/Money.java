@@ -1,7 +1,6 @@
 package com.vericerti.domain.common.vo;
 
-import com.vericerti.infrastructure.exception.BusinessException;
-import com.vericerti.infrastructure.exception.ErrorCode;
+import com.vericerti.domain.exception.InvalidAmountException;
 import jakarta.persistence.Embeddable;
 
 import java.math.BigDecimal;
@@ -11,7 +10,7 @@ public record Money(BigDecimal value) {
     
     public Money {
         if (value == null || value.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException(ErrorCode.INVALID_AMOUNT, "Amount must be positive");
+            throw new InvalidAmountException(value);
         }
     }
     
@@ -31,3 +30,4 @@ public record Money(BigDecimal value) {
         return value.compareTo(BigDecimal.ZERO) > 0;
     }
 }
+
