@@ -8,6 +8,7 @@ import com.vericerti.controller.account.response.AccountResponse;
 import com.vericerti.domain.account.entity.Account;
 import com.vericerti.domain.account.entity.AccountType;
 import com.vericerti.domain.auth.service.AuthService;
+import com.vericerti.domain.common.vo.AccountNumber;
 import com.vericerti.domain.common.vo.BusinessNumber;
 import com.vericerti.domain.member.entity.MemberRole;
 import com.vericerti.domain.organization.entity.Organization;
@@ -68,7 +69,7 @@ class AccountControllerIntegrationTest extends BaseIntegrationTest {
     void create_shouldReturnAccount() {
         // given
         AccountCreateRequest request = new AccountCreateRequest(
-                "123-456-789",
+                "1234567890",
                 "국민은행",
                 AccountType.OPERATING,
                 "테스트 단체",
@@ -89,7 +90,7 @@ class AccountControllerIntegrationTest extends BaseIntegrationTest {
         assertAll(
                 () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED),
                 () -> assertThat(response.getBody()).isNotNull(),
-                () -> assertThat(response.getBody().accountNumber()).isEqualTo("123-456-789"),
+                () -> assertThat(response.getBody().accountNumber()).isEqualTo("1234567890"),
                 () -> assertThat(response.getBody().bankName()).isEqualTo("국민은행")
         );
     }
@@ -100,7 +101,7 @@ class AccountControllerIntegrationTest extends BaseIntegrationTest {
         // given
         accountRepository.save(Account.builder()
                 .organizationId(testOrg.getId())
-                .accountNumber("ACC-1-" + UUID.randomUUID())
+                .accountNumber(AccountNumber.of(String.format("%014d", System.nanoTime() % 10000000000000L)))
                 .bankName("국민은행")
                 .accountType(AccountType.OPERATING)
                 .accountHolder("홀더")
@@ -129,7 +130,7 @@ class AccountControllerIntegrationTest extends BaseIntegrationTest {
         // given
         Account account = accountRepository.save(Account.builder()
                 .organizationId(testOrg.getId())
-                .accountNumber("ACC-" + UUID.randomUUID())
+                .accountNumber(AccountNumber.of(String.format("%014d", System.nanoTime() % 10000000000000L)))
                 .bankName("신한은행")
                 .accountType(AccountType.RESERVE)
                 .accountHolder("테스트")
@@ -159,7 +160,7 @@ class AccountControllerIntegrationTest extends BaseIntegrationTest {
         // given
         Account account = accountRepository.save(Account.builder()
                 .organizationId(testOrg.getId())
-                .accountNumber("DEL-" + UUID.randomUUID())
+                .accountNumber(AccountNumber.of(String.format("%014d", System.nanoTime() % 10000000000000L)))
                 .bankName("삭제은행")
                 .accountType(AccountType.OTHER)
                 .accountHolder("홀더")

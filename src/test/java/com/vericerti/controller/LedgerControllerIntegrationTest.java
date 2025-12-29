@@ -129,9 +129,12 @@ class LedgerControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/ledger/verify/{txHash} - 존재하지 않는 트랜잭션")
     void verifyByTxHash_withInvalidTx_shouldReturnNotFound() {
+        // given - valid format but non-existent txHash
+        String nonExistentTxHash = "0x" + "f".repeat(64);
+        
         // when
         ResponseEntity<VerifyResponse> response = restTemplate.getForEntity(
-                baseUrl() + "/api/ledger/verify/0xnonexistent",
+                baseUrl() + "/api/ledger/verify/" + nonExistentTxHash,
                 VerifyResponse.class
         );
 

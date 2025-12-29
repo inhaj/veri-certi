@@ -78,11 +78,11 @@ class BlockchainIntegrationTest extends BaseIntegrationTest {
         LedgerEntry updatedEntry = ledgerEntryRepository.findById(savedEntry.getId()).orElseThrow();
         
         assertThat(updatedEntry.getStatus()).isEqualTo(LedgerStatus.RECORDED);
-        assertThat(updatedEntry.getBlockchainTxHash()).isNotNull();
-        assertThat(updatedEntry.getBlockchainTxHash()).startsWith("0x");
+        assertThat(updatedEntry.getTxHashValue()).isPresent();
+        assertThat(updatedEntry.getTxHashValue().get()).startsWith("0x");
 
         System.out.println("✅ Entry recorded to blockchain!");
-        System.out.println("   TxHash: " + updatedEntry.getBlockchainTxHash());
+        System.out.println("   TxHash: " + updatedEntry.getTxHashValue().orElse("N/A"));
     }
 
     @Test

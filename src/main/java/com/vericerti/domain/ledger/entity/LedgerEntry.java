@@ -1,6 +1,7 @@
 package com.vericerti.domain.ledger.entity;
 
 import com.vericerti.domain.common.vo.DataHash;
+import com.vericerti.domain.common.vo.TxHash;
 import com.vericerti.domain.exception.IllegalStateTransitionException;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,8 +42,9 @@ public class LedgerEntry {
     @Column(length = 500)
     private String fileUrl;
 
-    @Column(name = "blockchain_tx_hash", length = 66)
-    private String blockchainTxHash;
+    @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "blockchain_tx_hash", length = 66))
+    private TxHash blockchainTxHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -64,6 +66,10 @@ public class LedgerEntry {
         return Optional.ofNullable(dataHash).map(DataHash::getValue);
     }
 
+    public Optional<String> getTxHashValue() {
+        return Optional.ofNullable(blockchainTxHash).map(TxHash::getValue);
+    }
+
     /**
      * Mark this entry as recorded on the blockchain.
      * Only allowed from PENDING status.
@@ -82,7 +88,7 @@ public class LedgerEntry {
             throw new IllegalArgumentException("Transaction hash cannot be empty");
         }
         
-        this.blockchainTxHash = txHash;
+        this.blockchainTxHash = TxHash.of(txHash);
         this.status = LedgerStatus.RECORDED;
     }
 

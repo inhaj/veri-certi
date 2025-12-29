@@ -65,7 +65,7 @@ public class AccountController {
         return new AccountResponse(
                 account.getId(),
                 account.getOrganizationId(),
-                account.getAccountNumber(),
+                account.getAccountNumber().getValue(),
                 account.getBankName(),
                 account.getAccountType(),
                 account.getAccountHolder(),

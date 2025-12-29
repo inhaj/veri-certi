@@ -80,7 +80,7 @@ public class DonationController {
             ledgerInfo = new DonationResponse.LedgerInfo(
                     ledgerEntry.getId(),
                     ledgerEntry.getDataHashValue().orElse(null),
-                    ledgerEntry.getBlockchainTxHash(),
+                    ledgerEntry.getTxHashValue().orElse(null),
                     ledgerEntry.getStatus()
             );
         }

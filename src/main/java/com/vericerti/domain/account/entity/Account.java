@@ -1,5 +1,6 @@
 package com.vericerti.domain.account.entity;
 
+import com.vericerti.domain.common.vo.AccountNumber;
 import com.vericerti.domain.common.vo.Money;
 import com.vericerti.domain.exception.AccountOperationException;
 import jakarta.persistence.*;
@@ -26,8 +27,9 @@ public class Account {
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
 
-    @Column(nullable = false, length = 50)
-    private String accountNumber;
+    @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "account_number", nullable = false, length = 50))
+    private AccountNumber accountNumber;
 
     @Column(nullable = false, length = 50)
     private String bankName;

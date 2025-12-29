@@ -3,6 +3,7 @@ package com.vericerti.domain.account.service;
 import com.vericerti.application.command.CreateAccountCommand;
 import com.vericerti.domain.account.entity.Account;
 import com.vericerti.domain.account.repository.AccountRepository;
+import com.vericerti.domain.common.vo.AccountNumber;
 import com.vericerti.domain.organization.repository.OrganizationRepository;
 import com.vericerti.infrastructure.exception.DuplicateException;
 import com.vericerti.infrastructure.exception.EntityNotFoundException;
@@ -39,7 +40,7 @@ public class AccountService {
 
         Account account = Account.builder()
                 .organizationId(command.organizationId())
-                .accountNumber(command.accountNumber())
+                .accountNumber(AccountNumber.of(command.accountNumber()))
                 .bankName(command.bankName())
                 .accountType(command.accountType())
                 .accountHolder(command.accountHolder())

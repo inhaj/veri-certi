@@ -51,7 +51,7 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
         // given
         CreateAccountCommand command = new CreateAccountCommand(
                 testOrg.getId(),
-                "123-456-789",
+                "1234567890",
                 "국민은행",
                 AccountType.OPERATING,
                 "테스트 단체",
@@ -66,7 +66,7 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
         assertAll(
                 () -> assertThat(account.getId()).isNotNull(),
                 () -> assertThat(account.getOrganizationId()).isEqualTo(testOrg.getId()),
-                () -> assertThat(account.getAccountNumber()).isEqualTo("123-456-789"),
+                () -> assertThat(account.getAccountNumber().getValue()).isEqualTo("1234567890"),
                 () -> assertThat(account.getBankName()).isEqualTo("국민은행"),
                 () -> assertThat(account.getAccountType()).isEqualTo(AccountType.OPERATING),
                 () -> assertThat(account.getBalance()).isEqualByComparingTo(new BigDecimal("1000000.00")),
@@ -80,7 +80,7 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
         // given
         CreateAccountCommand command = new CreateAccountCommand(
                 999L,
-                "123-456-789",
+                "1234567890",
                 "국민은행",
                 AccountType.OPERATING,
                 "테스트",
@@ -97,7 +97,7 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
     @DisplayName("createAccount - 중복 계좌번호")
     void createAccount_withDuplicateAccountNumber_shouldThrow() {
         // given
-        String accountNumber = "DUP-123-456";
+        String accountNumber = "9876543210";
         accountService.createAccount(new CreateAccountCommand(
                 testOrg.getId(), accountNumber, "국민은행", AccountType.OPERATING, "홀더1", null, null
         ));
@@ -113,7 +113,7 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
     void findById_shouldReturnAccount() {
         // given
         Account created = accountService.createAccount(new CreateAccountCommand(
-                testOrg.getId(), "111-222-333", "우리은행", AccountType.INVESTMENT, "투자계좌", null, "설명"
+                testOrg.getId(), "1112223334", "우리은행", AccountType.INVESTMENT, "투자계좌", null, "설명"
         ));
 
         // when
@@ -122,7 +122,7 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
         // then
         assertAll(
                 () -> assertThat(found.getId()).isEqualTo(created.getId()),
-                () -> assertThat(found.getAccountNumber()).isEqualTo("111-222-333")
+                () -> assertThat(found.getAccountNumber().getValue()).isEqualTo("1112223334")
         );
     }
 
@@ -138,10 +138,10 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
     void findByOrganizationId_shouldReturnAccounts() {
         // given
         accountService.createAccount(new CreateAccountCommand(
-                testOrg.getId(), "ACC-001", "국민은행", AccountType.OPERATING, "홀더", null, null
+                testOrg.getId(), "1111111111", "국민은행", AccountType.OPERATING, "홀더", null, null
         ));
         accountService.createAccount(new CreateAccountCommand(
-                testOrg.getId(), "ACC-002", "신한은행", AccountType.RESERVE, "홀더", null, null
+                testOrg.getId(), "2222222222", "신한은행", AccountType.RESERVE, "홀더", null, null
         ));
 
         // when
@@ -160,7 +160,7 @@ class AccountServiceIntegrationTest extends BaseIntegrationTest {
     void delete_shouldRemoveAccount() {
         // given
         Account account = accountService.createAccount(new CreateAccountCommand(
-                testOrg.getId(), "DEL-123", "삭제은행", AccountType.OTHER, "홀더", null, null
+                testOrg.getId(), "5555555555", "삭제은행", AccountType.OTHER, "홀더", null, null
         ));
         Long accountId = account.getId();
 

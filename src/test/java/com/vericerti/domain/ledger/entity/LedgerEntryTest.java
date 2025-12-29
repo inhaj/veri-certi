@@ -41,7 +41,7 @@ class LedgerEntryTest {
 
             // then
             assertThat(pendingEntry.getStatus()).isEqualTo(LedgerStatus.RECORDED);
-            assertThat(pendingEntry.getBlockchainTxHash()).isEqualTo(TX_HASH);
+            assertThat(pendingEntry.getTxHashValue().orElse(null)).isEqualTo(TX_HASH);
         }
 
         @Test
@@ -130,7 +130,7 @@ class LedgerEntryTest {
 
             // then
             assertThat(pendingEntry.getStatus()).isEqualTo(LedgerStatus.PENDING);
-            assertThat(pendingEntry.getBlockchainTxHash()).isNull();
+            assertThat(pendingEntry.getTxHashValue()).isEmpty();
         }
 
         @Test

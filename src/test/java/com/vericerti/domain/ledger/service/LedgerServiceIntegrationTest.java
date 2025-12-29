@@ -102,7 +102,7 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
         createAndSaveEntry(testOrg1.getId(), 100L);
         createAndSaveEntry(testOrg1.getId(), 101L);
         LedgerEntry recorded = createAndSaveEntry(testOrg1.getId(), 102L);
-        ledgerService.markAsRecorded(recorded.getId(), "0x123abc");
+        ledgerService.markAsRecorded(recorded.getId(), "0x" + "a".repeat(64));
 
         // when
         List<LedgerEntry> pendingEntries = ledgerService.findPendingEntries();
@@ -129,7 +129,7 @@ class LedgerServiceIntegrationTest extends BaseIntegrationTest {
         LedgerEntry updated = ledgerEntryRepository.findById(entry.getId()).orElseThrow();
         assertAll(
                 () -> assertThat(updated.getStatus()).isEqualTo(LedgerStatus.RECORDED),
-                () -> assertThat(updated.getBlockchainTxHash()).isEqualTo(txHash)
+                () -> assertThat(updated.getTxHashValue().orElse(null)).isEqualTo(txHash)
         );
     }
 

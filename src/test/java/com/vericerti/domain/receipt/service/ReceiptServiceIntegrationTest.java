@@ -5,6 +5,7 @@ import com.vericerti.config.BaseIntegrationTest;
 import com.vericerti.domain.account.entity.Account;
 import com.vericerti.domain.account.entity.AccountType;
 import com.vericerti.domain.account.repository.AccountRepository;
+import com.vericerti.domain.common.vo.AccountNumber;
 import com.vericerti.domain.common.vo.BusinessNumber;
 import com.vericerti.domain.organization.entity.Organization;
 import com.vericerti.domain.organization.repository.OrganizationRepository;
@@ -53,7 +54,7 @@ class ReceiptServiceIntegrationTest extends BaseIntegrationTest {
 
         testAccount = accountRepository.save(Account.builder()
                 .organizationId(testOrg.getId())
-                .accountNumber("TEST-ACC-" + UUID.randomUUID())
+                .accountNumber(AccountNumber.of(String.format("%014d", System.nanoTime() % 10000000000000L)))
                 .bankName("테스트은행")
                 .accountType(AccountType.OPERATING)
                 .accountHolder("테스트")

@@ -1,5 +1,6 @@
 package com.vericerti.domain.account.entity;
 
+import com.vericerti.domain.common.vo.AccountNumber;
 import com.vericerti.domain.common.vo.Money;
 import com.vericerti.domain.exception.AccountOperationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +22,7 @@ class AccountTest {
         activeAccount = Account.builder()
                 .id(1L)
                 .organizationId(100L)
-                .accountNumber("123-456-789")
+                .accountNumber(AccountNumber.of("1234567890"))
                 .bankName("Test Bank")
                 .accountType(AccountType.OPERATING)
                 .accountHolder("Test Holder")

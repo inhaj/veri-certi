@@ -85,7 +85,7 @@ public class LedgerController {
                 entry.getEntityId(),
                 entry.getDataHashValue().orElse(null),
                 entry.getFileUrl(),
-                entry.getBlockchainTxHash(),
+                entry.getTxHashValue().orElse(null),
                 entry.getStatus(),
                 entry.getRecordedAt()
         );

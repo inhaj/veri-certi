@@ -8,6 +8,7 @@ import com.vericerti.controller.receipt.response.ReceiptResponse;
 import com.vericerti.domain.account.entity.Account;
 import com.vericerti.domain.account.entity.AccountType;
 import com.vericerti.domain.auth.service.AuthService;
+import com.vericerti.domain.common.vo.AccountNumber;
 import com.vericerti.domain.common.vo.BusinessNumber;
 import com.vericerti.domain.member.entity.MemberRole;
 import com.vericerti.domain.organization.entity.Organization;
@@ -67,7 +68,7 @@ class ReceiptControllerIntegrationTest extends BaseIntegrationTest {
         // 테스트 Account 생성
         testAccount = accountRepository.save(Account.builder()
                 .organizationId(testOrg.getId())
-                .accountNumber("ACC-" + UUID.randomUUID())
+                .accountNumber(AccountNumber.of(String.format("%014d", System.nanoTime() % 10000000000000L)))
                 .bankName("테스트은행")
                 .accountType(AccountType.OPERATING)
                 .accountHolder("테스트")
