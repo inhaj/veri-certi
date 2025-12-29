@@ -1,7 +1,6 @@
 package com.vericerti.domain.common.vo;
 
-import com.vericerti.infrastructure.exception.BusinessException;
-import com.vericerti.infrastructure.exception.ErrorCode;
+import com.vericerti.domain.exception.InvalidBusinessNumberException;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
@@ -9,8 +8,7 @@ public record BusinessNumber(String value) {
     
     public BusinessNumber {
         if (value == null || value.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_BUSINESS_NUMBER, 
-                    "Business number cannot be empty");
+            throw new InvalidBusinessNumberException("", "Business number cannot be empty");
         }
     }
     
@@ -22,3 +20,4 @@ public record BusinessNumber(String value) {
         return value;
     }
 }
+
