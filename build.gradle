@@ -59,10 +59,13 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	// Testcontainers
-	testImplementation 'org.testcontainers:testcontainers:1.19.3'
-	testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
-	testImplementation 'org.testcontainers:mysql:1.19.3'
+	testImplementation 'org.testcontainers:testcontainers:1.21.0'
+	testImplementation 'org.testcontainers:junit-jupiter:1.21.0'
+	testImplementation 'org.testcontainers:mysql:1.21.0'
 	testImplementation 'com.redis:testcontainers-redis:2.2.2'
+	// Force newer docker-java API for Docker Desktop compatibility
+	testImplementation 'com.github.docker-java:docker-java-api:3.4.1'
+	testImplementation 'com.github.docker-java:docker-java-transport-zerodep:3.4.1'
 
 	// Spring Boot 4.0 Test Support
 	testImplementation 'org.springframework.boot:spring-boot-starter-restclient'

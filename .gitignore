@@ -59,7 +59,7 @@ logs/
 
 ### Local Uploads ###
 uploads/
-storage/
+/storage/
 *.tmp
 
 ### Test Uploads ###
